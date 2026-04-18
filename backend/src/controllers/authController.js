@@ -1,0 +1,185 @@
+import Message from "../models/Message.js";
+import Session from "../models/Session.js";
+import telegramService from "../services/telegramService.js";
+import { encrypt, decrypt } from "../utils/crypto.js";
+import { clearAllSessions } from "../utils/scripts.js";
+import {
+  createEmptyClient,
+  createClientFromStringSession,
+} from "../utils/telegramClient.js";
+import { Api } from "telegram";
+
+const apiId = parseInt(process.env.TELEGRAM_API_ID || "0", 10);
+const apiHash = process.env.TELEGRAM_API_HASH || "";
+
+// In-memory temporary store for phoneCodeHash per phone
+const pending = new Map();
+
+export async function sendCode(req, res) {
+  const { phoneNumber } = req.body;
+  if (!phoneNumber)
+    return res.status(400).json({ error: "phoneNumber required" });
+
+  console.log({ phoneNumber });
+  try {
+    const { client, session } = await createEmptyClient(apiId, apiHash);
+    // sendCode returns a result with phoneCodeHash
+    const sendResult = await client.sendCode(
+      {
+        apiId,
+        apiHash,
+      },
+      phoneNumber,
+    );
+    pending.set(phoneNumber, {
+      phoneCodeHash: sendResult.phoneCodeHash,
+      sessionString: session.save(),
+    });
+    await client.disconnect();
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error("sendCode error", err);
+    return res
+      .status(500)
+      .json({ error: "Failed to send code", detail: err.message });
+  }
+}
+export async function verifyCode(req, res) {
+  const { phoneNumber, code } = req.body;
+  if (!phoneNumber || !code)
+    return res.status(400).json({ error: "phoneNumber and code required" });
+
+  const record = pending.get(phoneNumber);
+  if (!record)
+    return res.status(400).json({ error: "No pending code for this number" });
+
+  try {
+    // RESUME the exact session state from sendCode
+    const { client, session } = await createClientFromStringSession(
+      record.sessionString,
+      apiId,
+      apiHash,
+    );
+
+    try {
+      // Use the raw MTProto API call for the code step
+      await client.invoke(
+        new Api.auth.SignIn({
+          phoneNumber,
+          phoneCodeHash: record.phoneCodeHash,
+          phoneCode: code,
+        }),
+      );
+    } catch (e) {
+      console.log("errorin verify code", e);
+      if (e.message && e.message.includes("SESSION_PASSWORD_NEEDED")) {
+        // Update the stored session string because the internal state advanced
+        pending.set(phoneNumber, {
+          ...record,
+          sessionString: session.save(),
+        });
+        await client.disconnect();
+        return res.json({ mfa: true });
+      }
+      throw e;
+    }
+
+    // On success, save the final authorized session string
+    const sessionString = session.save();
+    const encrypted = encrypt(sessionString);
+    await Session.findOneAndUpdate(
+      { phoneNumber },
+      { phoneNumber, session: encrypted },
+      { upsert: true },
+    );
+
+    await client.disconnect();
+    pending.delete(phoneNumber);
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error("verifyCode error", err);
+    return res
+      .status(500)
+      .json({ error: "Code verification failed", detail: err.message });
+  }
+}
+export async function verifyPassword(req, res) {
+  const { phoneNumber, password } = req.body;
+  if (!phoneNumber || !password)
+    return res.status(400).json({ error: "phoneNumber and password required" });
+
+  const record = pending.get(phoneNumber);
+  if (!record)
+    return res
+      .status(400)
+      .json({ error: "No pending auth flow for this number" });
+
+  try {
+    // Resume session one last time
+    const { client, session } = await createClientFromStringSession(
+      record.sessionString,
+      apiId,
+      apiHash,
+    );
+
+    // gram.js provides a helper that handles the complex SRP math for 2FA passwords
+    await client.signInWithPassword(
+      { apiId, apiHash },
+      {
+        password: async () => password,
+        onError: (err) => {
+          throw err;
+        },
+      },
+    );
+
+    const sessionString = session.save();
+    const encrypted = encrypt(sessionString);
+    await Session.findOneAndUpdate(
+      { phoneNumber },
+      { phoneNumber, session: encrypted },
+      { upsert: true },
+    );
+
+    await client.disconnect();
+    pending.delete(phoneNumber);
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error("verifyPassword error", err);
+    return res
+      .status(500)
+      .json({ error: "Password verification failed", detail: err.message });
+  }
+}
+export async function checkAuthStatus(req, res) {
+  try {
+    const sess = await Session.findOne();
+    if (sess && sess.session) {
+      return res.json({ authed: true });
+    }
+
+    return res.json({ authed: false });
+  } catch (err) {
+    console.error("checkAuthStatus error", err);
+    return res.status(500).json({ error: "Failed to check auth status" });
+  }
+}
+export async function logout(req, res) {
+  const { wipe } = req.query;
+
+  try {
+    await clearAllSessions();
+
+    await telegramService.disconnect();
+
+    if (wipe === "true") {
+      await Message.deleteMany({});
+      console.log("All Messages wiped");
+    }
+
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error("logout error", err);
+    return res.status(500).json({ error: "Failed to logout" });
+  }
+}

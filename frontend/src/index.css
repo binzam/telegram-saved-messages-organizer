@@ -1,0 +1,13 @@
+@import "tailwindcss";
+
+html,
+body,
+#root {
+  height: 100%;
+}
+body{
+  /* background-image: url('./assets/telegram-bg.png');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size:cover ; */
+}
