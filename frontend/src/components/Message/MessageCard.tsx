@@ -5,6 +5,7 @@ import {
   VideoMessage,
   AudioMessage,
   LinkMessage,
+  DocumentMessage,
 } from "./MediaTypes";
 
 interface MessageCardProps {
@@ -48,14 +49,15 @@ export default function MessageCard({
         return <AudioMessage message={message} />;
       case "link":
         return <LinkMessage message={message} />;
-      case "text":
       case "document":
+        return <DocumentMessage message={message} />;
+      case "text":
         return text ? (
-          <p className="whitespace-pre-wrap wrap-break-words text-slate-800">
+          <p className="whitespace-pre-wrap wrap-break-words text-[#f5f5f5]">
             {text}
           </p>
         ) : (
-          <i className="text-slate-400">Empty message</i>
+          <i className="text-[#8fa8ba]">Empty message</i>
         );
       default:
         return null;
@@ -64,23 +66,23 @@ export default function MessageCard({
 
   if (isAlbumItem) {
     return (
-      <div className="relative group">
+      <div className="relative">
         {renderBody()}
-        {text && <p className="mt-1 text-sm text-slate-600 truncate">{text}</p>}
+        {text && <p className="mt-1 text-sm text-[#f5f5f5] truncate">{text}</p>}
       </div>
     );
   }
 
   return (
-    <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 transition-shadow hover:shadow-md">
-      <div className="flex items-center justify-between mb-3 border-b border-slate-50 pb-3">
+    <div className="bg-[#2b5278] p-5 rounded-[10px_30px_10px_2px] shadow-sm border border-[#2b3e4d] transition-shadow hover:shadow-md">
+      <div className="flex items-center justify-between mb-3 border-b border-[#2b3e4d] pb-3">
         <div className="flex flex-col">
           {isForwarded && (
-            <div className="flex items-center text-xs text-blue-600 font-medium mb-1">
+            <div className="flex items-center text-sm text-[#afdcd9] font-semibold mb-1">
               Forwarded from {forwardInfo?.fromName || "Unknown"}
             </div>
           )}
-          <span className="text-xs text-slate-400">
+          <span className="text-xs text-[#8fa8ba]">
             {new Date(date).toLocaleString(undefined, {
               dateStyle: "medium",
               timeStyle: "short",
@@ -91,19 +93,19 @@ export default function MessageCard({
 
       <div className="mb-4">
         {type !== "link" && type !== "text" && text && (
-          <p className="mb-3 whitespace-pre-wrap wrap-break-words text-slate-800">
+          <p className="mb-3 whitespace-pre-wrap wrap-break-words text-[#f5f5f5]">
             {text}
           </p>
         )}
         {renderBody()}
       </div>
 
-      <div className="mt-4 pt-4 border-t border-slate-100">
+      <div className="mt-4 pt-4 border-t border-[#2b3e4d]">
         <div className="flex flex-wrap gap-2 mb-3">
           {allTags.map((t) => (
             <span
               key={t}
-              className="bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-md text-xs font-medium text-slate-600"
+              className="bg-[#182533] border border-[#2b3e4d] px-2.5 py-1 rounded-md text-xs font-medium text-[#f5f5f5]"
             >
               #{t}
             </span>
@@ -115,12 +117,12 @@ export default function MessageCard({
             placeholder="Add tags..."
             value={tagText}
             onChange={(e) => setTagText(e.target.value)}
-            className="flex-1 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 bg-[#182533] border border-[#2b3e4d] text-[#f5f5f5] placeholder-[#8fa8ba] px-3 py-1.5 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#5288c1]"
           />
           <button
             type="submit"
             disabled={!tagText.trim()}
-            className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white px-4 py-1.5 rounded-lg text-sm font-medium"
+            className="bg-[#5288c1] hover:bg-[#3e6d9e] disabled:bg-[#2b3e4d] disabled:text-[#8fa8ba] text-[#f5f5f5] px-4 py-1.5 rounded-lg text-sm font-medium transition"
           >
             Tag
           </button>
