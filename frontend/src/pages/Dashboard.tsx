@@ -19,8 +19,7 @@ export default function Dashboard() {
     hasNextPage,
     isFetchingNextPage,
     status,
-    error,
-    
+    error
   } = useMessages(filters);
   const tagMutation = useTagMessage();
 
