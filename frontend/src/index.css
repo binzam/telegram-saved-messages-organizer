@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap");
 @import "tailwindcss";
 
 html,
@@ -5,9 +6,14 @@ body,
 #root {
   height: 100%;
 }
-body{
+body {
   /* background-image: url('./assets/telegram-bg.png');
   background-repeat: no-repeat;
   background-position: center;
   background-size:cover ; */
+  font-family: "Roboto", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-style: normal;
+  font-variation-settings: "wdth" 100;
 }

@@ -5,6 +5,7 @@ import {
   useVerifyPassword,
 } from "../hooks/auth-hooks";
 import { AxiosError } from "axios";
+import TelegramLogo from "../assets/telegram-logo.svg";
 
 interface LoginProps {
   onAuthed: () => void;
@@ -74,39 +75,50 @@ const Login = ({ onAuthed }: LoginProps) => {
     }
     return error?.message || "An unexpected error occurred.";
   };
+  const inputClasses =
+    "w-full bg-[#182533] text-[#f5f5f5] placeholder-[#8fa8ba] border border-[#2b3e4d] rounded-lg p-3 outline-none focus:ring-2 focus:ring-[#5288c1] focus:border-[#5288c1] transition-all";
 
+  const primaryButtonClasses =
+    "mt-6 w-full bg-[#5288c1] hover:bg-[#5f8aac] disabled:bg-[#2b3e4d] disabled:text-[#8fa8ba] text-white font-bold px-4 py-3 rounded-lg transition-all flex justify-center items-center shadow-md";
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50">
-      <div className="w-full max-w-md bg-white p-8 rounded-xl shadow-sm border border-slate-200">
-        <h2 className="text-2xl font-bold text-slate-800 mb-6 text-center">
-          Telegram Login
-        </h2>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-[#0e1621] text-[#f5f5f5] p-4">
+      {/* Visual Identity: Telegram-like Icon */}
+      <div className="mb-8 flex flex-col items-center">
+        <div className="w-20 h-20 bg-[#5288c1] rounded-full flex items-center justify-center mb-4 shadow-lg">
+          <img src={TelegramLogo} alt="Telegram" className="w-20 h-20" />
+        </div>
+        <h2 className="text-3xl font-extrabold tracking-tight">Telegram</h2>
+        <p className="text-[#8fa8ba] mt-2">
+          Log in to manage your saved messages
+        </p>
+      </div>
 
+      <div className="w-full max-w-md bg-[#17212b] p-8 rounded-2xl shadow-2xl border border-[#2b3e4d]">
         {/* Step 1: Phone Number */}
         {step === 1 && (
           <form onSubmit={handleSendCode}>
             {sendCodeMutation.isError && (
-              <div className="p-3 mb-4 text-sm text-red-700 bg-red-100 rounded-lg">
+              <div className="p-3 mb-5 text-sm text-[#ff6b6b] bg-[#2b1515] border border-[#ff6b6b]/30 rounded-lg">
                 {getErrorMessage(sendCodeMutation.error)}
               </div>
             )}
-            <label className="block text-sm font-medium text-slate-700 mb-1">
+            <label className="block text-xs font-bold text-[#8fa8ba] uppercase tracking-wider mb-2">
               Phone Number
             </label>
             <input
               type="tel"
-              className="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+              className={inputClasses}
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              placeholder="+123456789"
+              placeholder="+1 234 567 8900"
               autoFocus
             />
             <button
               type="submit"
               disabled={sendCodeMutation.isPending || !phone}
-              className="mt-6 w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-medium px-4 py-2.5 rounded-lg transition-colors flex justify-center items-center"
+              className={primaryButtonClasses}
             >
-              {sendCodeMutation.isPending ? "Sending..." : "Send Code"}
+              {sendCodeMutation.isPending ? "Connecting..." : "Next"}
             </button>
           </form>
         )}
@@ -115,35 +127,42 @@ const Login = ({ onAuthed }: LoginProps) => {
         {step === 2 && (
           <form onSubmit={handleVerifyCode}>
             {verifyCodeMutation.isError && (
-              <div className="p-3 mb-4 text-sm text-red-700 bg-red-100 rounded-lg">
+              <div className="p-3 mb-5 text-sm text-[#ff6b6b] bg-[#2b1515] border border-[#ff6b6b]/30 rounded-lg">
                 {getErrorMessage(verifyCodeMutation.error)}
               </div>
             )}
-            <label className="block text-sm font-medium text-slate-700 mb-1">
+            <div className="text-center mb-6">
+              <h3 className="text-xl font-bold mb-1">{phone}</h3>
+              <p className="text-sm text-[#8fa8ba]">
+                We've sent a code to your Telegram app.
+              </p>
+            </div>
+
+            <label className="block text-xs font-bold text-[#8fa8ba] uppercase tracking-wider mb-2">
               Verification Code
             </label>
-            <p className="text-xs text-slate-500 mb-3">Sent to {phone}</p>
             <input
               type="text"
-              className="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-center tracking-[0.5em] font-mono text-lg"
+              className={`${inputClasses} text-center tracking-[0.75em] font-mono text-2xl`}
               value={code}
               onChange={(e) => setCode(e.target.value)}
-              placeholder="12345"
+              placeholder="•••••"
+              maxLength={5}
               autoFocus
             />
             <button
               type="submit"
               disabled={verifyCodeMutation.isPending || !code}
-              className="mt-6 w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-medium px-4 py-2.5 rounded-lg transition-colors flex justify-center items-center"
+              className={primaryButtonClasses}
             >
-              {verifyCodeMutation.isPending ? "Verifying..." : "Verify Code"}
+              {verifyCodeMutation.isPending ? "Verifying..." : "Verify"}
             </button>
             <button
               type="button"
               onClick={() => setStep(1)}
-              className="mt-4 w-full text-sm text-blue-600 hover:text-blue-800"
+              className="mt-6 w-full text-sm font-medium text-[#5288c1] hover:text-[#5f8aac] transition-colors"
             >
-              Back to Phone Number
+              Wrong number?
             </button>
           </form>
         )}
@@ -152,36 +171,38 @@ const Login = ({ onAuthed }: LoginProps) => {
         {step === 3 && (
           <form onSubmit={handleVerifyPassword}>
             {verifyPasswordMutation.isError && (
-              <div className="p-3 mb-4 text-sm text-red-700 bg-red-100 rounded-lg">
+              <div className="p-3 mb-5 text-sm text-[#ff6b6b] bg-[#2b1515] border border-[#ff6b6b]/30 rounded-lg">
                 {getErrorMessage(verifyPasswordMutation.error)}
               </div>
             )}
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              2FA Password
-            </label>
-            <p className="text-xs text-slate-500 mb-3">
-              Your account is protected by a password.
-            </p>
+            <div className="text-center mb-6">
+              <span className="text-4xl mb-4 block">🔐</span>
+              <h3 className="text-xl font-bold mb-1">Two-Step Verification</h3>
+              <p className="text-sm text-[#8fa8ba]">
+                Enter your cloud password.
+              </p>
+            </div>
             <input
               type="password"
-              className="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+              className={inputClasses}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
+              placeholder="Your password"
               autoFocus
             />
             <button
               type="submit"
               disabled={verifyPasswordMutation.isPending || !password}
-              className="mt-6 w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-medium px-4 py-2.5 rounded-lg transition-colors flex justify-center items-center"
+              className={primaryButtonClasses}
             >
-              {verifyPasswordMutation.isPending
-                ? "Verifying..."
-                : "Unlock Account"}
+              {verifyPasswordMutation.isPending ? "Unlocking..." : "Submit"}
             </button>
           </form>
         )}
       </div>
+      <p className="mt-8 text-xs text-[#546b82]">
+        This interface connects securely via your API credentials.
+      </p>
     </div>
   );
 };
