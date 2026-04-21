@@ -1,6 +1,15 @@
-import Session from "../models/Session.js";
+import { Request, Response, NextFunction } from "express";
+import Session, { ISession } from "../models/Session.js";
 
-export async function requireAuth(req, res, next) {
+export interface AuthRequest extends Request {
+  sessionDoc?: ISession;
+}
+
+export async function requireAuth(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void | Response> {
   try {
     const sess = await Session.findOne();
 

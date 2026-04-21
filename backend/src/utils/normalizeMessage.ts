@@ -1,13 +1,12 @@
-// --- HELPER: Parse Telegram Message into our DB Schema ---
-export function normalizeMessage(m) {
+// Define a Partial return type or use the interface from your model.
+export function normalizeMessage(m: any) {
   let type = "text";
-  const autoTags = [];
-  const metadata = {};
+  const autoTags: string[] = [];
+  const metadata: any = {};
   const text = m.message || m.message?.toString?.() || "";
 
-  // 1. Handle Forwarded Info
   let isForwarded = false;
-  let forwardInfo = null;
+  let forwardInfo: any = null;
 
   if (m.fwdFrom) {
     isForwarded = true;
@@ -21,17 +20,15 @@ export function normalizeMessage(m) {
     };
   }
 
-  // 2. Handle Media & Metadata
   if (m.media) {
     if (m.media.className === "MessageMediaPhoto") {
       type = "image";
       autoTags.push("media", "photo");
 
-      // Extract the highest resolution dimensions
       const sizes = m.media.photo?.sizes || [];
       const largestSize = sizes
-        .filter((s) => s.w && s.h)
-        .sort((a, b) => b.w * b.h - a.w * a.h)[0];
+        .filter((s: any) => s.w && s.h)
+        .sort((a: any, b: any) => b.w * b.h - a.w * a.h)[0];
 
       if (largestSize) {
         metadata.width = largestSize.w;
@@ -45,7 +42,6 @@ export function normalizeMessage(m) {
 
       let isVoice = m.media.voice || false;
 
-      // Extract specific attributes (filename, dimensions, audio properties)
       if (doc?.attributes) {
         for (const attr of doc.attributes) {
           if (attr.className === "DocumentAttributeFilename") {
@@ -64,7 +60,6 @@ export function normalizeMessage(m) {
         }
       }
 
-      // Determine document sub-type
       if (isVoice || mimeType.startsWith("audio/")) {
         type = "audio";
         autoTags.push("media", "audio", isVoice ? "voice-note" : "music");
@@ -97,16 +92,15 @@ export function normalizeMessage(m) {
           const domain = new URL(metadata.url).hostname.replace("www.", "");
           autoTags.push(domain);
         } catch (e) {
-          /* Ignore invalid URLs */
+          // Ignore invalid URLs
         }
       }
     } else {
       type = "other";
     }
   } else {
-    // 3. Handle Text/Links without rich media previews
     const hasLinkEntity = m.entities?.some(
-      (e) =>
+      (e: any) =>
         e.className === "MessageEntityUrl" ||
         e.className === "MessageEntityTextUrl",
     );

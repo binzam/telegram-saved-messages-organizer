@@ -1,5 +1,4 @@
 import { Router } from "express";
-const router = Router();
 import {
   sendCode,
   verifyCode,
@@ -7,6 +6,8 @@ import {
   checkAuthStatus,
   logout,
 } from "../controllers/authController.js";
+
+const router = Router();
 
 router.post("/send-code", sendCode);
 router.post("/verify-code", verifyCode);

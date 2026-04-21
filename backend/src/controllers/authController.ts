@@ -1,7 +1,8 @@
+import { Request, Response } from "express";
 import Message from "../models/Message.js";
 import Session from "../models/Session.js";
 import telegramService from "../services/telegramService.js";
-import { encrypt, decrypt } from "../utils/crypto.js";
+import { encrypt } from "../utils/crypto.js";
 import { clearAllSessions } from "../utils/scripts.js";
 import {
   createEmptyClient,
@@ -12,10 +13,15 @@ import { Api } from "telegram";
 const apiId = parseInt(process.env.TELEGRAM_API_ID || "0", 10);
 const apiHash = process.env.TELEGRAM_API_HASH || "";
 
-// In-memory temporary store for phoneCodeHash per phone
-const pending = new Map();
+interface PendingAuth {
+  phoneCodeHash: string;
+  sessionString: string;
+}
 
-export async function sendCode(req, res) {
+// In-memory temporary store for phoneCodeHash per phone
+const pending = new Map<string, PendingAuth>();
+
+export async function sendCode(req: Request, res: Response): Promise<Response> {
   const { phoneNumber } = req.body;
   if (!phoneNumber)
     return res.status(400).json({ error: "phoneNumber required" });
@@ -23,6 +29,7 @@ export async function sendCode(req, res) {
   console.log({ phoneNumber });
   try {
     const { client, session } = await createEmptyClient(apiId, apiHash);
+
     // sendCode returns a result with phoneCodeHash
     const sendResult = await client.sendCode(
       {
@@ -31,20 +38,26 @@ export async function sendCode(req, res) {
       },
       phoneNumber,
     );
+
     pending.set(phoneNumber, {
       phoneCodeHash: sendResult.phoneCodeHash,
-      sessionString: session.save(),
+      sessionString: session.save() as unknown as string,
     });
+
     await client.disconnect();
     return res.json({ ok: true });
-  } catch (err) {
+  } catch (err: any) {
     console.error("sendCode error", err);
     return res
       .status(500)
       .json({ error: "Failed to send code", detail: err.message });
   }
 }
-export async function verifyCode(req, res) {
+
+export async function verifyCode(
+  req: Request,
+  res: Response,
+): Promise<Response> {
   const { phoneNumber, code } = req.body;
   if (!phoneNumber || !code)
     return res.status(400).json({ error: "phoneNumber and code required" });
@@ -70,13 +83,13 @@ export async function verifyCode(req, res) {
           phoneCode: code,
         }),
       );
-    } catch (e) {
-      console.log("errorin verify code", e);
+    } catch (e: any) {
+      console.log("error in verify code", e);
       if (e.message && e.message.includes("SESSION_PASSWORD_NEEDED")) {
         // Update the stored session string because the internal state advanced
         pending.set(phoneNumber, {
           ...record,
-          sessionString: session.save(),
+          sessionString: session.save() as unknown as string,
         });
         await client.disconnect();
         return res.json({ mfa: true });
@@ -85,8 +98,9 @@ export async function verifyCode(req, res) {
     }
 
     // On success, save the final authorized session string
-    const sessionString = session.save();
+    const sessionString = session.save() as unknown as string;
     const encrypted = encrypt(sessionString);
+
     await Session.findOneAndUpdate(
       { phoneNumber },
       { phoneNumber, session: encrypted },
@@ -96,14 +110,18 @@ export async function verifyCode(req, res) {
     await client.disconnect();
     pending.delete(phoneNumber);
     return res.json({ ok: true });
-  } catch (err) {
+  } catch (err: any) {
     console.error("verifyCode error", err);
     return res
       .status(500)
       .json({ error: "Code verification failed", detail: err.message });
   }
 }
-export async function verifyPassword(req, res) {
+
+export async function verifyPassword(
+  req: Request,
+  res: Response,
+): Promise<Response> {
   const { phoneNumber, password } = req.body;
   if (!phoneNumber || !password)
     return res.status(400).json({ error: "phoneNumber and password required" });
@@ -127,14 +145,15 @@ export async function verifyPassword(req, res) {
       { apiId, apiHash },
       {
         password: async () => password,
-        onError: (err) => {
+        onError: (err: Error) => {
           throw err;
         },
       },
     );
 
-    const sessionString = session.save();
+    const sessionString = session.save() as unknown as string;
     const encrypted = encrypt(sessionString);
+
     await Session.findOneAndUpdate(
       { phoneNumber },
       { phoneNumber, session: encrypted },
@@ -144,14 +163,18 @@ export async function verifyPassword(req, res) {
     await client.disconnect();
     pending.delete(phoneNumber);
     return res.json({ ok: true });
-  } catch (err) {
+  } catch (err: any) {
     console.error("verifyPassword error", err);
     return res
       .status(500)
       .json({ error: "Password verification failed", detail: err.message });
   }
 }
-export async function checkAuthStatus(req, res) {
+
+export async function checkAuthStatus(
+  req: Request,
+  res: Response,
+): Promise<Response> {
   try {
     const sess = await Session.findOne();
     if (sess && sess.session) {
@@ -164,12 +187,12 @@ export async function checkAuthStatus(req, res) {
     return res.status(500).json({ error: "Failed to check auth status" });
   }
 }
-export async function logout(req, res) {
+
+export async function logout(req: Request, res: Response): Promise<Response> {
   const { wipe } = req.query;
 
   try {
     await clearAllSessions();
-
     await telegramService.disconnect();
 
     if (wipe === "true") {
