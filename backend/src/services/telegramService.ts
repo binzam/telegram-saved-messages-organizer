@@ -5,19 +5,21 @@ const apiId = parseInt(process.env.TELEGRAM_API_ID || "0", 10);
 const apiHash = process.env.TELEGRAM_API_HASH || "";
 
 class TelegramService {
+  public client: TelegramClient | null;
+  public sessionString: string | null;
+  public connecting: Promise<TelegramClient> | null;
+
   constructor() {
     this.client = null;
     this.sessionString = null;
-    this.connecting = null; // prevents parallel connects
+    this.connecting = null;
   }
 
-  async init(sessionString) {
-    // If already connected with same session → reuse
+  async init(sessionString: string): Promise<TelegramClient> {
     if (this.client && this.sessionString === sessionString) {
       return this.client;
     }
 
-    // If already connecting → wait for it
     if (this.connecting) {
       return this.connecting;
     }
@@ -29,7 +31,7 @@ class TelegramService {
     return client;
   }
 
-  async _connect(sessionString) {
+  private async _connect(sessionString: string): Promise<TelegramClient> {
     if (this.client) {
       await this.client.disconnect();
       this.client = null;
@@ -51,14 +53,14 @@ class TelegramService {
     return client;
   }
 
-  getClient() {
+  getClient(): TelegramClient {
     if (!this.client) {
       throw new Error("Telegram client not initialized");
     }
     return this.client;
   }
 
-  async disconnect() {
+  async disconnect(): Promise<void> {
     if (this.client) {
       await this.client.disconnect();
       this.client = null;
@@ -68,5 +70,4 @@ class TelegramService {
 }
 
 const telegramService = new TelegramService();
-
 export default telegramService;

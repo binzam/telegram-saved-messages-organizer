@@ -1,5 +1,4 @@
 import { Router } from "express";
-const router = Router();
 import {
   getMedia,
   getMessages,
@@ -7,6 +6,7 @@ import {
 } from "../controllers/messagesController.js";
 import { requireAuth } from "../middlewares/requireAuth.js";
 
+const router = Router();
 
 router.use(requireAuth);
 router.get("/", getMessages);

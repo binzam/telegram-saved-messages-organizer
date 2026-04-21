@@ -1,10 +1,10 @@
 import "dotenv/config";
-import express, { json } from "express";
+import express, { json, Request, Response } from "express";
 import cors from "cors";
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/auth.js";
 import messageRoutes from "./routes/messages.js";
-import { clearAllSessions } from "./utils/scripts.js";
+import { Server } from "http";
 import telegramService from "./services/telegramService.js";
 
 const app = express();
@@ -18,12 +18,12 @@ app.use("/auth", authRoutes);
 app.use("/messages", messageRoutes);
 
 // --- Health check ---
-app.get("/health", (req, res) => {
+app.get("/health", (req: Request, res: Response) => {
   res.json({ status: "ok" });
 });
 
 const PORT = process.env.PORT || 4000;
-let server;
+let server: Server;
 
 // --- Start Server  ---
 async function startServer() {
@@ -42,12 +42,12 @@ async function startServer() {
 startServer();
 
 // --- Graceful Shutdown ---
-async function shutdown(signal) {
+async function shutdown(signal: string) {
   console.log(`\n⚠️ Received ${signal}. Shutting down gracefully...`);
 
   try {
     if (server) {
-      await new Promise((resolve) => server.close(resolve));
+      await new Promise<void>((resolve) => server.close(() => resolve()));
       console.log("HTTP server closed");
     }
 
@@ -63,7 +63,7 @@ async function shutdown(signal) {
 
 // Handle all shutdown signals
 ["SIGINT", "SIGTERM"].forEach((signal) => {
-  process.on(signal, shutdown);
+  process.on(signal, () => shutdown(signal));
 });
 
 // --- Global Error Handlers ---
