@@ -1,5 +1,9 @@
 import { TelegramClient } from "telegram";
 import { StringSession } from "telegram/sessions/index.js";
+import { NewMessage, NewMessageEvent } from "telegram/events/index.js";
+import { normalizeMessage } from "../utils/normalizeMessage.js";
+import Message from "../models/Message.js";
+import { socketService } from "./socketService.js";
 
 const apiId = parseInt(process.env.TELEGRAM_API_ID || "0", 10);
 const apiHash = process.env.TELEGRAM_API_HASH || "";
@@ -49,10 +53,34 @@ class TelegramService {
     this.sessionString = sessionString;
 
     console.log("✅ Telegram client connected (singleton)");
-
+    // Add Real-Time Listener for Saved Messages
+    this.client.addEventHandler(
+      this.handleNewMessage.bind(this),
+      new NewMessage({ chats: ["me"] }), // Filters for "Saved Messages"
+    );
     return client;
   }
+  private async handleNewMessage(event: NewMessageEvent): Promise<void> {
+    try {
+      const message = event.message;
 
+      // Normalize the raw GramJS message
+      const normalizedMsg = normalizeMessage(message);
+
+      // Save to MongoDB
+      const savedDoc = await Message.findOneAndUpdate(
+        { messageId: normalizedMsg.messageId },
+        { $set: normalizedMsg },
+        { upsert: true, new: true, lean: true },
+      );
+
+      // Broadcast to frontend
+      const io = socketService.getIO();
+      io.emit("new_saved_message", savedDoc);
+    } catch (error) {
+      console.error("❌ Error handling new Telegram message:", error);
+    }
+  }
   getClient(): TelegramClient {
     if (!this.client) {
       throw new Error("Telegram client not initialized");
