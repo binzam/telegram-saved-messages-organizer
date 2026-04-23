@@ -2,6 +2,7 @@ import { useAuth } from "./hooks/auth-hooks";
 import { queryClient } from "./lib/query-client";
 import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
+import { SocketProvider } from "./providers/SocketProvider";
 
 function App() {
   const { data: authed, isLoading } = useAuth();
@@ -15,7 +16,9 @@ function App() {
   }
 
   return authed ? (
-    <Dashboard />
+    <SocketProvider>
+      <Dashboard />
+    </SocketProvider>
   ) : (
     <Login
       onAuthed={() => queryClient.invalidateQueries({ queryKey: ["auth"] })}

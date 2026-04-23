@@ -4,10 +4,15 @@ import cors from "cors";
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/auth.js";
 import messageRoutes from "./routes/messages.js";
-import { Server } from "http";
+import { createServer, Server } from "http";
 import telegramService from "./services/telegramService.js";
+import { socketService } from "./services/socketService.js";
 
 const app = express();
+const httpServer = createServer(app);
+
+// Initialize Socket.io
+socketService.init(httpServer);
 
 // --- Middleware ---
 app.use(cors());
@@ -30,7 +35,7 @@ async function startServer() {
   try {
     await connectDB();
 
-    server = app.listen(PORT, () => {
+    server = httpServer.listen(PORT, () => {
       console.log(`🚀 Backend listening on ${PORT}`);
     });
   } catch (err) {
