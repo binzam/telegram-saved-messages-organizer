@@ -7,6 +7,7 @@ import {
   LinkMessage,
   DocumentMessage,
 } from "./MediaTypes";
+import { useDeleteMessage } from "../../hooks/message-hooks";
 
 interface MessageCardProps {
   message: Message;
@@ -20,9 +21,17 @@ export default function MessageCard({
   isAlbumItem = false,
 }: MessageCardProps) {
   const [tagText, setTagText] = useState("");
-
-  const { type, text, autoTags, userTags, isForwarded, forwardInfo, date } =
-    message;
+  const deleteMutation = useDeleteMessage();
+  const {
+    type,
+    text,
+    autoTags,
+    userTags,
+    isForwarded,
+    forwardInfo,
+    date,
+    messageId,
+  } = message;
   const allTags = Array.from(
     new Set([...(autoTags || []), ...(userTags || [])]),
   );
@@ -38,7 +47,14 @@ export default function MessageCard({
       setTagText("");
     }
   };
-
+  const handleDelete = () => {
+    const isConfirmed = window.confirm(
+      "Are you sure you want to delete this message? This will remove it from your database AND actual Telegram account permanently.",
+    );
+    if (isConfirmed) {
+      deleteMutation.mutate(messageId);
+    }
+  };
   const renderBody = () => {
     switch (type) {
       case "image":
@@ -89,6 +105,13 @@ export default function MessageCard({
             })}
           </span>
         </div>
+        <button
+          onClick={handleDelete}
+          disabled={deleteMutation.isPending}
+          className="text-[#ef6666] hover:text-[#ff8888] text-sm font-medium transition disabled:opacity-50"
+        >
+          {deleteMutation.isPending ? "Deleting..." : "Delete"}
+        </button>
       </div>
 
       <div className="mb-4">

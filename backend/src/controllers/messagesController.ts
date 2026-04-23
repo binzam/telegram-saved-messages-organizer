@@ -147,3 +147,37 @@ export async function tagMessage(
     return res.status(500).json({ error: "Failed to tag message" });
   }
 }
+export async function deleteMessage(
+  req: AuthRequest,
+  res: Response,
+): Promise<Response | void> {
+  const { messageId } = req.params;
+
+  if (!messageId) {
+    return res.status(400).json({ error: "messageId is required" });
+  }
+
+  try {
+    const sess = req.sessionDoc;
+    if (!sess || !sess.session) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const sessionString = decrypt(sess.session);
+    const client = await telegramService.init(sessionString);
+
+    // 1. Delete from Telegram Saved Messages ("me")
+    // revoke: true ensures it is permanently deleted
+    await client.deleteMessages("me", [parseInt(messageId as string, 10)], {
+      revoke: true,
+    });
+
+    // 2. Delete from MongoDB
+    await Message.findOneAndDelete({ messageId });
+
+    return res.json({ ok: true, message: "Message deleted successfully" });
+  } catch (err) {
+    console.error("deleteMessage error", err);
+    return res.status(500).json({ error: "Failed to delete message" });
+  }
+}

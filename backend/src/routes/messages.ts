@@ -1,5 +1,6 @@
 import { Router } from "express";
 import {
+  deleteMessage,
   getMedia,
   getMessages,
   tagMessage,
@@ -12,5 +13,5 @@ router.use(requireAuth);
 router.get("/", getMessages);
 router.post("/tag", tagMessage);
 router.get("/media/:messageId", getMedia);
-
+router.delete("/:messageId", requireAuth, deleteMessage);
 export default router;

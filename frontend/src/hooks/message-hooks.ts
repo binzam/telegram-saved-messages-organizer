@@ -72,3 +72,50 @@ export const useTagMessage = () => {
     },
   });
 };
+
+export const useDeleteMessage = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (messageId: string) => {
+      await apiClient.delete(`/messages/${messageId}`);
+    },
+    onMutate: async (messageId) => {
+      // Cancel any outgoing refetches so they don't overwrite our optimistic update
+      await queryClient.cancelQueries({ queryKey: ["messages"] });
+
+      // Snapshot the previous value
+      const previousMessages = queryClient.getQueryData(["messages"]);
+
+      // Optimistically remove the message from the cached pages
+      queryClient.setQueriesData(
+        { queryKey: ["messages"] },
+        (oldData: InfiniteData<MessagesResponse, number> | undefined) => {
+          if (!oldData) return oldData;
+          return {
+            ...oldData,
+            pages: oldData.pages.map((page: MessagesResponse) => ({
+              ...page,
+              messages: page.messages.filter(
+                (msg) => msg.messageId !== messageId,
+              ),
+            })),
+          };
+        },
+      );
+
+      return { previousMessages };
+    },
+    onError: (err, messageId, context) => {
+      // If the mutation fails, roll back to the previous snapshot
+      if (context?.previousMessages) {
+        queryClient.setQueryData(["messages"], context.previousMessages);
+      }
+      alert("Failed to delete the message.");
+    },
+    onSettled: () => {
+      // Always refetch after error or success to ensure db sync
+      queryClient.invalidateQueries({ queryKey: ["messages"] });
+    },
+  });
+};
