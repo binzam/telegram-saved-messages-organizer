@@ -26,6 +26,8 @@ export interface IMessage extends Document {
     title?: string;
     description?: string;
   };
+  // summary?: string;
+  // summaryGenerated?: boolean;
   groupedId?: string;
   updatedAt: Date;
 }
@@ -64,7 +66,8 @@ const MessageSchema = new Schema<IMessage>({
     title: String,
     description: String,
   },
-
+  summary: { type: String, index: true },
+  summaryGenerated: { type: Boolean, default: false },
   groupedId: { type: String, index: true },
   updatedAt: { type: Date, default: Date.now },
 });
