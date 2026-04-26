@@ -38,8 +38,38 @@ export function SocketProvider({ children }: SocketProviderProps) {
         },
       );
     };
+    const handleTaskUpdate = (data: {
+      messageId: string;
+      taskId: string;
+      updates: { status: string } | { isNotified: boolean };
+    }) => {
+      // 1. Invalidate the specific task list for the message
+      // This ensures that if the user is looking at the TaskPage, it refetches
+      queryClient.invalidateQueries({ queryKey: ["tasks", data.messageId] });
 
+      // 2. Optional: If you want to update the "messages" list cache
+      // (e.g., to update a "has pending tasks" icon on the dashboard)
+      queryClient.setQueriesData<InfiniteData<MessagesResponse>>(
+        { queryKey: ["messages"] },
+        (oldData) => {
+          if (!oldData) return oldData;
+          return {
+            ...oldData,
+            pages: oldData.pages.map((page) => ({
+              ...page,
+              messages: page.messages.map((msg) => {
+                // Logic to update specific message flags if needed
+                return msg.messageId === data.messageId
+                  ? { ...msg, updatedAt: new Date() }
+                  : msg;
+              }),
+            })),
+          };
+        },
+      );
+    };
     socket.on("new_saved_message", handleNewMessage);
+    socket.on("task_updated", handleTaskUpdate);
 
     return () => {
       socket.off("new_saved_message", handleNewMessage);

@@ -39,6 +39,7 @@ export interface Message {
   };
   date: string;
   groupedId?: string;
+  hasTask: boolean;
 }
 
 export interface MessagesResponse {
@@ -53,3 +54,35 @@ export interface FilterState {
 }
 
 export type MessageDisplayNode = MessageSingleNode | MessageGroupNode;
+
+export interface CreateTaskInput {
+  messageId: string;
+  title?: string;
+  note?: string;
+  reminderAt: string;
+  notifyVia?: ("email" | "telegram")[];
+}
+
+export interface AddTaskForm {
+  title: string;
+  note: string;
+  date: string;
+  time: string;
+  notifyVia: ("email" | "telegram")[];
+}
+
+export interface TasksResponse {
+  message: Message & {
+    tasks: Task[];
+  };
+}
+export interface Task {
+  _id: string;
+  messageId: string;
+  title?: string;
+  note?: string;
+  reminderAt: string;
+  notifyVia: ("email" | "telegram")[];
+  status: string;
+  isNotified: boolean;
+}
