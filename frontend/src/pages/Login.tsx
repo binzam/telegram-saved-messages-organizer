@@ -82,7 +82,6 @@ const Login = ({ onAuthed }: LoginProps) => {
     "mt-6 w-full bg-[#5288c1] hover:bg-[#5f8aac] disabled:bg-[#2b3e4d] disabled:text-[#8fa8ba] text-white font-bold px-4 py-3 rounded-lg transition-all flex justify-center items-center shadow-md";
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-[#0e1621] text-[#f5f5f5] p-4">
-      {/* Visual Identity: Telegram-like Icon */}
       <div className="mb-8 flex flex-col items-center">
         <div className="w-20 h-20 bg-[#5288c1] rounded-full flex items-center justify-center mb-4 shadow-lg">
           <img src={TelegramLogo} alt="Telegram" className="w-20 h-20" />

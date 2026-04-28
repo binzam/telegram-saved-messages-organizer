@@ -7,10 +7,6 @@ body,
   height: 100%;
 }
 body {
-  /* background-image: url('./assets/telegram-bg.png');
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size:cover ; */
   font-family: "Roboto", sans-serif;
   font-optical-sizing: auto;
   font-weight: 400;
