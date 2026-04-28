@@ -18,7 +18,7 @@ const ProtectedLayout = () => {
   }
 
   return (
-    <SocketProvider>
+    <SocketProvider isAuthed>
       <Outlet />
     </SocketProvider>
   );
