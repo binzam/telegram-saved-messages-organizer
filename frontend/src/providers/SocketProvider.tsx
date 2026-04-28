@@ -6,10 +6,22 @@ import { queryClient } from "../lib/query-client";
 
 interface SocketProviderProps {
   children: ReactNode;
+  isAuthed: boolean;
 }
 
-export function SocketProvider({ children }: SocketProviderProps) {
+export function SocketProvider({
+  children,
+  isAuthed = false,
+}: SocketProviderProps) {
   useEffect(() => {
+    if (!isAuthed) {
+      socket.disconnect();
+      return;
+    }
+    // Connect the socket
+    if (!socket.connected) {
+      socket.connect();
+    }
     const handleNewMessage = (newMessage: Message) => {
       queryClient.setQueriesData<InfiniteData<MessagesResponse>>(
         { queryKey: ["messages"] },
@@ -38,13 +50,18 @@ export function SocketProvider({ children }: SocketProviderProps) {
         },
       );
     };
+    const handleTaskUpdate = (data: { messageId: string; taskId: string }) => {
+      queryClient.invalidateQueries({ queryKey: ["tasks", data.messageId] });
+    };
 
     socket.on("new_saved_message", handleNewMessage);
+    socket.on("task_updated", handleTaskUpdate);
 
     return () => {
       socket.off("new_saved_message", handleNewMessage);
+      socket.off("task_updated", handleTaskUpdate);
     };
-  }, []);
+  }, [isAuthed]);
 
   return <>{children}</>;
 }

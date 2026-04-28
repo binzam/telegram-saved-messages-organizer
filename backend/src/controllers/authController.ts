@@ -9,9 +9,11 @@ import {
   createClientFromStringSession,
 } from "../utils/telegramClient.js";
 import { Api } from "telegram";
+import Task from "../models/Task.js";
 
 const apiId = parseInt(process.env.TELEGRAM_API_ID || "0", 10);
 const apiHash = process.env.TELEGRAM_API_HASH || "";
+const BOT_USERNAME = process.env.TELEGRAM_BOT || "";
 
 interface PendingAuth {
   phoneCodeHash: string;
@@ -96,14 +98,32 @@ export async function verifyCode(
       }
       throw e;
     }
+    const existingSession = await Session.findOne({ phoneNumber });
+    // Get the user's own profile info (which includes their ID)
+    const me = await client.getMe();
+    const chatId = me.id.toString();
 
+    // Only send the /start command if this is a brand new session/user
+    if (!existingSession) {
+      try {
+        await client.sendMessage(BOT_USERNAME!, {
+          message: "/start",
+        });
+        console.log(`✅ Sent init message to bot ${BOT_USERNAME}`);
+      } catch (msgErr) {
+        console.error(
+          "⚠️ Failed to message bot, user might need to do it manually",
+          msgErr,
+        );
+      }
+    }
     // On success, save the final authorized session string
     const sessionString = session.save() as unknown as string;
     const encrypted = encrypt(sessionString);
 
     await Session.findOneAndUpdate(
       { phoneNumber },
-      { phoneNumber, session: encrypted },
+      { phoneNumber, session: encrypted, chatId },
       { upsert: true },
     );
 
@@ -150,13 +170,31 @@ export async function verifyPassword(
         },
       },
     );
+    const existingSession = await Session.findOne({ phoneNumber });
+    // Get the user's own profile info (which includes their ID)
+    const me = await client.getMe();
+    const chatId = me.id.toString();
 
+    // Only send the /start command if this is a brand new session/user
+    if (!existingSession) {
+      try {
+        await client.sendMessage(BOT_USERNAME!, {
+          message: "/start",
+        });
+        console.log(`✅ Sent init message to bot ${BOT_USERNAME}`);
+      } catch (msgErr) {
+        console.error(
+          "⚠️ Failed to message bot, user might need to do it manually",
+          msgErr,
+        );
+      }
+    }
     const sessionString = session.save() as unknown as string;
     const encrypted = encrypt(sessionString);
 
     await Session.findOneAndUpdate(
       { phoneNumber },
-      { phoneNumber, session: encrypted },
+      { phoneNumber, session: encrypted, chatId },
       { upsert: true },
     );
 
@@ -197,7 +235,8 @@ export async function logout(req: Request, res: Response): Promise<Response> {
 
     if (wipe === "true") {
       await Message.deleteMany({});
-      console.log("All Messages wiped");
+      await Task.deleteMany({});
+      console.log("All Messages & Tasks wiped");
     }
 
     return res.json({ ok: true });

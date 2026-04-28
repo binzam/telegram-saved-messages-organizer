@@ -2,6 +2,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { AxiosError } from "axios";
 import { apiClient } from "../lib/api-client";
 import { queryClient } from "../lib/query-client";
+import { socket } from "../lib/socket";
 
 export const useAuth = () => {
   return useQuery({
@@ -67,6 +68,7 @@ export const useLogout = () => {
       return data;
     },
     onSuccess: () => {
+      socket.disconnect();
       queryClient.setQueryData(["auth"], false);
       queryClient.invalidateQueries({ queryKey: ["messages"] });
     },

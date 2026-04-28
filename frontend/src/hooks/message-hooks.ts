@@ -1,11 +1,11 @@
 import {
   useInfiniteQuery,
   useMutation,
-  useQueryClient,
   type InfiniteData,
 } from "@tanstack/react-query";
 import type { MessagesResponse, FilterState } from "../types";
 import { apiClient } from "../lib/api-client";
+import { queryClient } from "../lib/query-client";
 
 // Infinite Messages Hook
 export const useMessages = (filters: FilterState) => {
@@ -31,8 +31,6 @@ export const useMessages = (filters: FilterState) => {
 
 // Tag Mutation Hook
 export const useTagMessage = () => {
-  const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: async ({
       messageId,
@@ -74,8 +72,6 @@ export const useTagMessage = () => {
 };
 
 export const useDeleteMessage = () => {
-  const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: async (messageId: string) => {
       await apiClient.delete(`/messages/${messageId}`);
@@ -106,7 +102,7 @@ export const useDeleteMessage = () => {
 
       return { previousMessages };
     },
-    onError: (err, messageId, context) => {
+    onError: (_err, _messageId, context) => {
       // If the mutation fails, roll back to the previous snapshot
       if (context?.previousMessages) {
         queryClient.setQueryData(["messages"], context.previousMessages);

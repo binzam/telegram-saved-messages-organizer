@@ -4,9 +4,12 @@ import cors from "cors";
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/auth.js";
 import messageRoutes from "./routes/messages.js";
+import taskRoutes from "./routes/task.js";
 import { createServer, Server } from "http";
 import telegramService from "./services/telegramService.js";
 import { socketService } from "./services/socketService.js";
+import { initTelegramBot } from "./services/telegramBotService.js";
+import { initCronJobs } from "./cron/taskReminderCron.js";
 
 const app = express();
 const httpServer = createServer(app);
@@ -18,9 +21,15 @@ socketService.init(httpServer);
 app.use(cors());
 app.use(json());
 
+
+// Services
+initTelegramBot();
+initCronJobs();
+
 // --- Routes ---
 app.use("/auth", authRoutes);
 app.use("/messages", messageRoutes);
+app.use("/task", taskRoutes);
 
 // --- Health check ---
 app.get("/health", (req: Request, res: Response) => {
@@ -49,7 +58,6 @@ startServer();
 // --- Graceful Shutdown ---
 async function shutdown(signal: string) {
   console.log(`\n⚠️ Received ${signal}. Shutting down gracefully...`);
-
   try {
     if (server) {
       await new Promise<void>((resolve) => server.close(() => resolve()));

@@ -26,6 +26,7 @@ export interface IMessage extends Document {
     title?: string;
     description?: string;
   };
+  hasTask: boolean;
   groupedId?: string;
   updatedAt: Date;
 }
@@ -64,7 +65,7 @@ const MessageSchema = new Schema<IMessage>({
     title: String,
     description: String,
   },
-
+  hasTask: { type: Boolean, default: false, index: true },
   groupedId: { type: String, index: true },
   updatedAt: { type: Date, default: Date.now },
 });
