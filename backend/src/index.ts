@@ -58,7 +58,6 @@ startServer();
 // --- Graceful Shutdown ---
 async function shutdown(signal: string) {
   console.log(`\n⚠️ Received ${signal}. Shutting down gracefully...`);
-
   try {
     if (server) {
       await new Promise<void>((resolve) => server.close(() => resolve()));

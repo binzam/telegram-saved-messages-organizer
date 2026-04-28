@@ -51,7 +51,6 @@ export function initCronJobs() {
         io.emit("task_updated", {
           messageId: task.messageId,
           taskId: task._id,
-          updates: { isNotified: true },
         });
       }
     } catch (error) {

@@ -3,6 +3,7 @@ import Task from "../models/Task.js";
 import { AuthRequest } from "./messagesController.js";
 import Message from "../models/Message.js";
 import Session from "../models/Session.js";
+import { triggerTaskNotification } from "../services/taskNotificationService.js";
 
 export async function createTask(
   req: AuthRequest,
@@ -26,6 +27,9 @@ export async function createTask(
       targetChatId,
     });
     await Message.updateOne({ messageId }, { $set: { hasTask: true } });
+    if (process.env.NODE_ENV === "development") {
+      await triggerTaskNotification(task);
+    }
     return res.json({ ok: true, task });
   } catch (err) {
     return res.status(500).json({ error: "Failed to create task" });

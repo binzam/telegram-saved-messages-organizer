@@ -18,6 +18,7 @@ bot.start((ctx) => {
 // Helper function to escape HTML characters so the bot doesn't crash on < or >
 const escapeHtml = (str: string) =>
   str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
 export async function sendTelegramReminder(
   chatId: string,
   title: string,
@@ -40,8 +41,8 @@ export async function sendTelegramReminder(
         Markup.button.callback("✅ Mark as Done", `done_${taskId}`),
       ]).reply_markup;
     }
-    // Switched to HTML for safer string parsing
     await bot.telegram.sendMessage(chatId, text, options);
+
     console.log(`✅ Telegram bot message sent to ${chatId}`);
   } catch (error) {
     console.error(
@@ -65,7 +66,6 @@ bot.action(/^done_(.+)$/, async (ctx) => {
       io.emit("task_updated", {
         messageId: updatedTask.messageId,
         taskId: updatedTask._id,
-        updates: { status: "done" },
       });
     }
     // 2. Answer the callback so the button stops showing a "loading" state
