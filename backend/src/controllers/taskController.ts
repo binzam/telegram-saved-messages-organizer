@@ -10,7 +10,6 @@ export async function createTask(
   res: Response,
 ): Promise<Response | void> {
   const { messageId, title, note, reminderAt, notifyVia } = req.body;
-  console.log("req.body create Task", req.body);
   if (!messageId || !reminderAt) {
     return res.status(400).json({ error: "Missing required fields" });
   }

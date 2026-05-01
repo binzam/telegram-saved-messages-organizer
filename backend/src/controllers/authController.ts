@@ -28,7 +28,6 @@ export async function sendCode(req: Request, res: Response): Promise<Response> {
   if (!phoneNumber)
     return res.status(400).json({ error: "phoneNumber required" });
 
-  console.log({ phoneNumber });
   try {
     const { client, session } = await createEmptyClient(apiId, apiHash);
 
@@ -86,7 +85,7 @@ export async function verifyCode(
         }),
       );
     } catch (e: any) {
-      console.log("error in verify code", e);
+      console.error("error in verify code", e);
       if (e.message && e.message.includes("SESSION_PASSWORD_NEEDED")) {
         // Update the stored session string because the internal state advanced
         pending.set(phoneNumber, {
