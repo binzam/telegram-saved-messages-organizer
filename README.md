@@ -23,6 +23,7 @@ Getting started (development)
 - Clone the repo:
 
   git clone https://github.com/binzam/telegram-saved-messages-organizer.git
+
   cd telegram-saved-messages-organizer
 
 - Backend
