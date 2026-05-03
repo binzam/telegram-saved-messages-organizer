@@ -154,6 +154,3 @@ Contributing
 
 - Feel free to open issues or PRs. Keep backend changes TypeScript-friendly and update typings.
 
-License
-
-- MIT
